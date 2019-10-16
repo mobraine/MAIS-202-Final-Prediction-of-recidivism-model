@@ -1,1 +1,55 @@
+#import libraries  
+
+from google.colab import drive
+import os
+import csv
+import random
+from string import ascii_letters
+import heapq
+from random import shuffle
+from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import random
+
+
+#runnng the code below
+drive.mount('/content/gdrive')
+root_path = 'gdrive/My Drive/your_project_folder/'  #change dir to your project folder
+
+from google.colab import files
+files.upload()
+
+!pip install -q kaggle
+!mkdir -p ~/.kaggle
+!cp kaggle.json ~/.kaggle/
+!ls ~/.kaggle
+!chmod 600 /root/.kaggle/kaggle.json  # set permission
+
+!kaggle datasets list --user "slonnadube"
+!kaggle datasets download -d  slonnadube/recidivism-for-offenders-released-from-prison
+
+
+
+!ls ./3-Year_Recidivism_for_Offenders_Rel
+
+data_3_year = 0
+data_less = 0
+
+with open("./3-Year_Recidivism_for_Offenders_Rel/3-Year_Recidivism_for_Offenders_Released_from_Prison_in_Iowa_elaborated.csv") as csv_file:
+  csv_reader = csv.reader(csv_file)
+  data_3_year = list(csv_reader)
+ 
+
+with open("./3-Year_Recidivism_for_Offenders_Rel/prison_recidivists_with_recidivism_type_only.csv") as csv_file:
+  csv_reader = csv.reader(csv_file)
+  data_less = list(csv_reader)
+
+data_3_year = np.array(data_3_year)
+data_less = np.array(data_less)
+
+3_year_training = data_3_year[0 : 0.5 * len(data_3_year)]
 
