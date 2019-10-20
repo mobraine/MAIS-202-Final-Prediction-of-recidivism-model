@@ -41,15 +41,146 @@ data_less = 0
 
 with open("./3-Year_Recidivism_for_Offenders_Rel/3-Year_Recidivism_for_Offenders_Released_from_Prison_in_Iowa_elaborated.csv") as csv_file:
   csv_reader = csv.reader(csv_file)
+  colnames_3_year = next(csv_reader)
+  colnames_3_year = np.array(colnames_3_year)
+  colnames_3_year = colnames_3_year[2:]
   data_3_year = list(csv_reader)
- 
+  data_3_year = np.array(data_3_year)
+  data_3_year = data_3_year[:,2:]#removing first two columns containing release year and recidivism year
+  print (colnames_3_year)
 
 with open("./3-Year_Recidivism_for_Offenders_Rel/prison_recidivists_with_recidivism_type_only.csv") as csv_file:
   csv_reader = csv.reader(csv_file)
+  colnames_less = next(csv_reader)
+  colnames_less = np.array(colnames_less)
+  colnames_less = colnames_less[2:]
   data_less = list(csv_reader)
+  data_less = np.array(data_less)
+  data_less = data_less[:,2:]
+  print (colnames_less)
 
-data_3_year = np.array(data_3_year)
-data_less = np.array(data_less)
 
-3_year_training = data_3_year[0 : 0.5 * len(data_3_year)]
+#randomly select training, testing and validation dataset
+shuffled_data_3_year = data_3_year.copy()
+shuffled_data_less = data_less.copy()
 
+random.shuffle(shuffled_data_3_year)
+random.shuffle(shuffled_data_less)
+
+x_train = shuffled_data_3_year[0 : 13010]
+x_test = shuffled_data_3_year[13011 : 20817]
+x_validation = shuffled_data_3_year[20818 : 26021]
+
+#x_train = random.sample(data_3_year, 13010)
+
+print(x_train.shape)
+print(data_less.shape)
+
+#examine if the data is random 
+print(colnames_3_year)
+print(x_train[0:30])
+#print(data_3_year[0:10])
+
+#Direct run to get prelimary results.
+
+#first numerize each data point
+#I will have an array of dicts, to store the occrruence of each type in each feature and try to ccalculate their probability
+
+def numerize (x):
+  array_dicts = []
+  for i in range(10):# going from columm to column
+    dict = {}
+    for j in range (len(x)):#going from row to row
+      type = x[j][i]
+      if type in dict:
+        dict[type] += 1
+      else:
+        dict[type] = 1
+    array_dicts.append(dict)
+  return array_dicts
+
+def prob(x):
+  array_prob = []
+  array_dicts = numerize (x)
+  for i in range (9):
+    dict = {}
+    for type in array_dicts[i]:
+      prob_type = array_dicts[i][type] / len(x)
+      dict[type] = prob_type
+    array_prob.append(dict)
+  return array_prob
+
+prob_x_train = prob(x_train)
+prob_x_test = prob(x_test)
+prob_x_validation = prob(x_validation)
+#prob_x_train.pop("0.6744811683320523")
+print (prob_x_train)
+print (prob_x_test)
+print (prob_x_validation)
+
+print (len(prob_x_test))
+
+#now that we have prob for each type of each category, let's map the prob to their location in each record.
+def vectorize (x,prob_x):
+  x_clone = x.copy()
+  for record in x_clone:
+    for i in range(9):
+      type = record[i] 
+      if type in prob_x[i]:
+        record[i] = prob_x[i][type]
+      #print (prob_x[i][record[i]])
+  return x_clone
+
+
+x_train_vectorized = vectorize(x_train, prob_x_train)
+x_train_vectorized = np.delete(x_train_vectorized,0,0)
+
+x_test_vectorized = vectorize(x_test, prob_x_test)
+x_validation_vectorized = vectorize(x_validation, prob_x_validation)
+#for i in range(50):
+ # print (x_test_vectorized[i])
+ 
+#print (x_test_vectorized.shape)
+
+# Run model LinearSVM
+# specify classes recid
+
+def class_getter(x):
+  recid = []
+  #recid = np.array(recid)
+  for record in x:
+    if record[9] == '1':
+      recid.append(1)
+    else:
+      recid.append(0)
+  return recid
+
+y_train = class_getter(x_train_vectorized)
+print(y_train)
+#svm
+svm_clf = svm.LinearSVC()
+svm_clf.fit(x_train_vectorized, y_train)
+
+#test case 1 succeEd!!!! now need to predict the whole test set.
+test = x_test_vectorized[0]
+test = test.astype(np.float64)
+test = test.reshape(1, -1)
+print(test.shape)
+print(svm_clf.predict(test))
+
+# now need to predict the whole test set.
+def accuracy(x):
+  accu_count = 0
+  for test in x:
+    test = test.astype(np.float64)
+    test = test.reshape(1, -1)
+    #print (test.shape)
+    if svm_clf.predict(test) == test[0][9]:
+      accu_count += 1
+      #print("true")
+  accuracy = accu_count / len(x)
+  return accuracy
+
+print ("Accuracy of test set: " + str(accuracy(x_test_vectorized)))
+print ("Accuracy of validation set: " + str(accuracy(x_validation_vectorized)))
+# got the result of 1.0 accuracy?! overfitting??? too amazing 
