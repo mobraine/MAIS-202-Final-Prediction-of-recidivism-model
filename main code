@@ -184,3 +184,24 @@ def accuracy(x):
 print ("Accuracy of test set: " + str(accuracy(x_test_vectorized)))
 print ("Accuracy of validation set: " + str(accuracy(x_validation_vectorized)))
 # got the result of 1.0 accuracy?! overfitting??? too amazing 
+
+
+#Random Forest
+rfc = RandomForestClassifier(n_estimators=100, max_depth=3, min_samples_split = 2, max_features = 10 ,random_state=0)
+rfc.fit(x_train_vectorized, y_train)
+
+def rfc_accuracy(x):
+  accu_count = 0
+  for test in x:
+    test = test.astype(np.float64)
+    test = test.reshape(1, -1)
+    #print (test.shape)
+    if rfc.predict(test) == test[0][9]:
+      accu_count += 1
+      #print("true")
+  accuracy = accu_count / len(x)
+  return accuracy
+  
+print ("Accuracy of test set: " + str(rfc_accuracy(x_test_vectorized)))
+print ("Accuracy of validation set: " + str(rfc_accuracy(x_validation_vectorized)))
+#what??? overfitting again???
