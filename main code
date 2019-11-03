@@ -110,6 +110,7 @@ def prob(x):
     array_prob.append(dict)
   return array_prob
 
+prob_x_overall = prob(shuffled_data_3_year)
 prob_x_train = prob(x_train)
 prob_x_test = prob(x_test)
 prob_x_validation = prob(x_validation)
@@ -117,6 +118,7 @@ prob_x_validation = prob(x_validation)
 print (prob_x_train)
 print (prob_x_test)
 print (prob_x_validation)
+print (prob_x_overall)
 
 print (len(prob_x_test))
 
@@ -132,11 +134,11 @@ def vectorize (x,prob_x):
   return x_clone
 
 
-x_train_vectorized = vectorize(x_train, prob_x_train)
+x_train_vectorized = vectorize(x_train, prob_x_overall)#vectorize(x_train, prob_x_train)
 x_train_vectorized = np.delete(x_train_vectorized,0,0)
 
-x_test_vectorized = vectorize(x_test, prob_x_test)
-x_validation_vectorized = vectorize(x_validation, prob_x_validation)
+x_test_vectorized = vectorize(x_test, prob_x_overall)#vectorize(x_test, prob_x_test)
+x_validation_vectorized = vectorize(x_validation, prob_x_overall)
 #for i in range(50):
  # print (x_test_vectorized[i])
  
@@ -180,6 +182,20 @@ def accuracy(x):
       #print("true")
   accuracy = accu_count / len(x)
   return accuracy
+
+# print prediction compared to initial set
+prediction = []
+original = []
+for record in x_test:
+  original.append(int(record[9]))
+for record in x_test_vectorized:
+  copy = record
+  copy = copy.astype(np.float64)
+  copy = copy.reshape(1, -1)
+  prediction.append(svm_clf.predict(copy)[0])
+
+print(prediction)
+print(original)
 
 print ("Accuracy of test set: " + str(accuracy(x_test_vectorized)))
 print ("Accuracy of validation set: " + str(accuracy(x_validation_vectorized)))
