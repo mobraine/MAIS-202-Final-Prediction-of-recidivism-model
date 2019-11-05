@@ -163,61 +163,65 @@ print(y_train)
 svm_clf = svm.LinearSVC()
 svm_clf.fit(x_train_vectorized, y_train)
 
-#test case 1 succeEd!!!! now need to predict the whole test set.
-test = x_test_vectorized[0]
-test = test.astype(np.float64)
-test = test.reshape(1, -1)
-print(test.shape)
-print(svm_clf.predict(test))
+#function that make an array of prediction and an array original recidivism
+def svm_predict(original):
+  prediction = []
+  for record in original:
+    copy = record
+    copy = copy.astype(np.float64)
+    copy = copy.reshape(1, -1)
+    prediction.append(svm_clf.predict(copy)[0])
+  return prediction
 
-# now need to predict the whole test set.
-def accuracy(x):
-  accu_count = 0
-  for test in x:
-    test = test.astype(np.float64)
-    test = test.reshape(1, -1)
-    #print (test.shape)
-    if svm_clf.predict(test) == test[0][9]:
-      accu_count += 1
-      #print("true")
-  accuracy = accu_count / len(x)
-  return accuracy
+def original(ori):
+  origin = [] 
+  for record in ori:
+    origin.append(int(record[9]))
+  return origin
 
-# print prediction compared to initial set
-prediction = []
-original = []
-for record in x_test:
-  original.append(int(record[9]))
-for record in x_test_vectorized:
-  copy = record
-  copy = copy.astype(np.float64)
-  copy = copy.reshape(1, -1)
-  prediction.append(svm_clf.predict(copy)[0])
+test_pred_svm = svm_predict(x_test_vectorized)
+test_ori = original(x_test)
 
-print(prediction)
-print(original)
+validation_pred_svm = svm_predict(x_validation_vectorized)
+validation_ori = original(x_validation)
 
-print ("Accuracy of test set: " + str(accuracy(x_test_vectorized)))
-print ("Accuracy of validation set: " + str(accuracy(x_validation_vectorized)))
-# got the result of 1.0 accuracy?! overfitting??? too amazing 
 
+#see recall score
+print ("Recall score of test set is " + str(recall_score(test_ori, test_pred_svm, average='macro')))
+print ("Recall score of validation set is " + str(recall_score(validation_ori, validation_pred_svm, average='macro'))) 
+
+#see accuracy
+print("Accuracy score of test set is " + str(accuracy_score(test_ori, test_pred_svm)))
+print("Accuracy score of validation set is " + str(accuracy_score(validation_ori, validation_pred_svm)))
+
+#see precision score
+print("Precision score of test set is " + str(precision_score(test_ori, test_pred_svm, average='macro')))
+print("Precision score of validation set is " + str(precision_score(validation_ori, validation_pred_svm, average='macro'))) 
 
 #Random Forest
 rfc = RandomForestClassifier(n_estimators=100, max_depth=3, min_samples_split = 2, max_features = 10 ,random_state=0)
 rfc.fit(x_train_vectorized, y_train)
 
-def rfc_accuracy(x):
-  accu_count = 0
-  for test in x:
-    test = test.astype(np.float64)
-    test = test.reshape(1, -1)
-    #print (test.shape)
-    if rfc.predict(test) == test[0][9]:
-      accu_count += 1
-      #print("true")
-  accuracy = accu_count / len(x)
-  return accuracy
+def rfc_predict(original):
+  prediction = []
+  for record in original:
+    copy = record
+    copy = copy.astype(np.float64)
+    copy = copy.reshape(1, -1)
+    prediction.append(rfc.predict(copy)[0])
+  return prediction
   
-print ("Accuracy of test set: " + str(rfc_accuracy(x_test_vectorized)))
-print ("Accuracy of validation set: " + str(rfc_accuracy(x_validation_vectorized)))
-#what??? overfitting again???
+test_pred_rfc = rfc_predict(x_test_vectorized)
+validation_pred_rfc = rfc_predict(x_validation_vectorized)
+
+#see recall score
+print ("Recall score of test set is " + str(recall_score(test_ori, test_pred_rfc, average='macro')))
+print ("Recall score of validation set is " + str(recall_score(validation_ori, validation_pred_rfc, average='macro'))) 
+
+#see accuracy
+print("Accuracy score of test set is " + str(accuracy_score(test_ori, test_pred_rfc)))
+print("Accuracy score of validation set is " + str(accuracy_score(validation_ori, validation_pred_rfc)))
+
+#see precision score
+print("Precision score of test set is " + str(precision_score(test_ori, test_pred_rfc, average='macro')))
+print("Precision score of validation set is " + str(precision_score(validation_ori, validation_pred_rfc, average='macro'))) 
