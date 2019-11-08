@@ -225,3 +225,51 @@ print("Accuracy score of validation set is " + str(accuracy_score(validation_ori
 #see precision score
 print("Precision score of test set is " + str(precision_score(test_ori, test_pred_rfc, average='macro')))
 print("Precision score of validation set is " + str(precision_score(validation_ori, validation_pred_rfc, average='macro'))) 
+
+
+#To make my model even more useful, I decided to plot which factor affect recidivism the most significantly. The idea is
+#I will created an array of recidivist, and for each category, I will compute their probability of each type.
+
+#first concatenate all three sets to make the vectorized original 
+
+#shuffled_data_3_year_vec = np.concatenate((x_train_vectorized, x_test_vectorized, x_validation_vectorized), axis=0)
+#print (shuffled_data_3_year_vec.shape)
+#print (shuffled_data_3_year_vec[0:10])
+
+recid = []
+for record in shuffled_data_3_year:
+  if record[9] == '1':
+    recid.append(record)
+
+recid = np.array(recid)
+prob_x_overall_recid = prob(recid)
+print(prob_x_overall_recid)
+
+#now plot each of these category's categories categories tyoe distribution
+def getLabels(category):
+  labels = []
+  for key in category:
+    labels.append(key)
+  return labels
+
+def getValues(category):
+  values = []
+  for key in category:
+    values.append(category[key])
+  return values
+
+
+for i in range(9):
+  labels = getLabels(prob_x_overall_recid[i])
+  values = getValues(prob_x_overall_recid[i])
+  df = pd.DataFrame({colnames_3_year[i]:labels, 'val':values})
+  ax = df.plot.barh(x=colnames_3_year[i], y='val', rot=0)
+  fig = ax.get_figure()
+  file_name = colnames_3_year[i] + '.pdf'
+  fig.savefig(file_name, bbox_inches='tight')
+  #ax = df[['lab', 'val']].plot(figsize=(10,5))
+#notice that the largest proportion in main supervising district is null, which means there is no such district? 
+
+
+
+
