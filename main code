@@ -144,6 +144,19 @@ x_validation_vectorized = vectorize(x_validation, prob_x_overall)
  
 #print (x_test_vectorized.shape)
 
+#dropping last column
+def drop (x):
+  x_dropped = []
+  for record in x:
+    x_dropped.append(record[0:8])
+  return x_dropped
+
+x_train_vectorized_dropped = drop(x_train_vectorized)
+x_test_vectorized_dropped = drop(x_test_vectorized)
+x_validation_vectorized_dropped = drop(x_validation_vectorized)
+
+
+
 # Run model LinearSVM
 # specify classes recid
 
@@ -161,7 +174,7 @@ y_train = class_getter(x_train_vectorized)
 print(y_train)
 #svm
 svm_clf = svm.LinearSVC()
-svm_clf.fit(x_train_vectorized, y_train)
+svm_clf.fit(x_train_vectorized_dropped, y_train)
 
 #function that make an array of prediction and an array original recidivism
 def svm_predict(original):
@@ -198,9 +211,60 @@ print("Accuracy score of validation set is " + str(accuracy_score(validation_ori
 print("Precision score of test set is " + str(precision_score(test_ori, test_pred_svm, average='macro')))
 print("Precision score of validation set is " + str(precision_score(validation_ori, validation_pred_svm, average='macro'))) 
 
+
+#hyperparameter tunning using RandomizedSearchCV
+from sklearn.model_selection import RandomizedSearchCV# Number of trees in random forest
+n_estimators = [int(x) for x in np.linspace(start = 10, stop = 100, num = 10)]
+# Number of features to consider at every split
+max_features = [8]
+# Maximum number of levels in tree
+max_depth = [int(x) for x in np.linspace(10, 1000, num = 11)]
+max_depth.append(None)
+# Minimum number of samples required to split a node
+min_samples_split = [2, 5, 10]
+# Minimum number of samples required at each leaf node
+min_samples_leaf = [1, 2, 4]
+# Method of selecting samples for training each tree
+bootstrap = [True, False]# Create the random grid
+random_grid = {'n_estimators': n_estimators,
+               'max_features': max_features,
+               'max_depth': max_depth,
+               'min_samples_split': min_samples_split,
+               'min_samples_leaf': min_samples_leaf,
+               'bootstrap': bootstrap}
+
+# Use the random grid to search for best hyperparameters
+# First create the base model to tune
+rf = RandomForestClassifier()
+# Random search of parameters, using 3 fold cross validation, 
+# search across 100 different combinations, and use all available cores
+rf_random = RandomizedSearchCV(estimator = rf, param_distributions = random_grid, n_iter = 100, cv = 3, verbose=2, random_state=42, n_jobs = -1)# Fit the random search model
+rf_random.fit(x_train_vectorized_dropped, y_train)
+
+rf_random.best_params_
+
+#now try grid search 
+from sklearn.model_selection import GridSearchCV# Create the parameter grid based on the results of random search 
+param_grid = {
+    'bootstrap': [True],
+    'max_depth': [406],#[406, 456, 506, 556]
+    'max_features': [8],
+    'min_samples_leaf': [1],
+    'min_samples_split': [2],
+    'n_estimators': [500,600,700,800,900, 1000]
+}# Create a based model
+rf = RandomForestClassifier()# Instantiate the grid search model
+grid_search = GridSearchCV(estimator = rf, param_grid = param_grid, 
+                          cv = 3, n_jobs = -1, verbose = 2)
+                          
+grid_search.fit(x_train_vectorized_dropped, y_train)
+grid_search.best_params_
+
+
+
 #Random Forest
-rfc = RandomForestClassifier(n_estimators=100, max_depth=3, min_samples_split = 2, max_features = 10 ,random_state=0)
-rfc.fit(x_train_vectorized, y_train)
+rfc = RandomForestClassifier(n_estimators=500, max_depth=406, min_samples_split = 2, max_features = 8 ,random_state=0)
+rfc.fit(x_train_vectorized_dropped, y_train)
 
 def rfc_predict(original):
   prediction = []
